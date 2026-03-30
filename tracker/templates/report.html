@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monthly Report</title>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: Arial;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        canvas {
+            max-width: 600px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📊 Monthly Report</h1>
+
+<!-- Income Section -->
+<div class="section">
+    <h2>💰 Income</h2>
+    {% for i in income_data %}
+        <p>{{ i.month|date:"Y-m" }} : {{ i.total }}</p>
+    {% empty %}
+        <p>No income data</p>
+    {% endfor %}
+</div>
+
+<!-- Expense Section -->
+<div class="section">
+    <h2>💸 Expense</h2>
+    {% for e in expense_data %}
+        <p>{{ e.month|date:"Y-m" }} : {{ e.total }}</p>
+    {% empty %}
+        <p>No expense data</p>
+    {% endfor %}
+</div>
+
+<hr>
+
+<!-- Chart -->
+<h2>📈 Chart</h2>
+<canvas id="myChart"></canvas>
+
+<!-- JSON Script: Safely pass Django data to JS -->
+{{ income_data|json_script:"income-data" }}
+{{ expense_data|json_script:"expense-data" }}
+
+<script>
+    // Parse Django data safely
+    const incomeData = JSON.parse(document.getElementById('income-data').textContent);
+    const expenseData = JSON.parse(document.getElementById('expense-data').textContent);
+
+    // Prepare labels (YYYY-MM)
+    const labelsSet = new Set(); // to include months from both income & expense
+    incomeData.forEach(i => labelsSet.add(i.month.slice(0,7)));
+    expenseData.forEach(e => labelsSet.add(e.month.slice(0,7)));
+    const labels = Array.from(labelsSet).sort(); // sort months ascending
+
+    // Prepare income and expense arrays
+    const income = labels.map(label => {
+        const item = incomeData.find(i => i.month.slice(0,7) === label);
+        return item ? item.total : 0;
+    });
+
+    const expense = labels.map(label => {
+        const item = expenseData.find(e => e.month.slice(0,7) === label);
+        return item ? item.total : 0;
+    });
+
+    // Chart.js config
+    const data = {
+        labels: labels,
+        datasets: [
+            {
+                label: 'Income',
+                data: income,
+                backgroundColor: 'green'
+            },
+            {
+                label: 'Expense',
+                data: expense,
+                backgroundColor: 'red'
+            }
+        ]
+    };
+
+    const config = {
+        type: 'bar',
+        data: data,
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { position: 'top' },
+            }
+        }
+    };
+
+    new Chart(document.getElementById('myChart'), config);
+</script>
+
+<br>
+<a href="/">⬅ Back to Dashboard</a>
+
+</body>
+</html>
