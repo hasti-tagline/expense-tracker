@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Monthly Report</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<h1>Monthly Report</h1>
+
+<!-- JSON Script: Safely pass Django data to JS -->
+{{ income_data|json_script:"income-data" }}
+{{ expense_data|json_script:"expense-data" }}
+
+<h2>Chart</h2>
+<canvas id="myChart"></canvas>
+
+<script>
+    const incomeData = JSON.parse(document.getElementById('income-data').textContent);
+    const expenseData = JSON.parse(document.getElementById('expense-data').textContent);
+
+    // Collect all months from both income & expense
+    const labelsSet = new Set();
+    incomeData.forEach(i => labelsSet.add(i.month));
+    expenseData.forEach(e => labelsSet.add(e.month));
+    const labels = Array.from(labelsSet).sort();
+
+    // Map totals for chart
+    const income = labels.map(label => {
+        const item = incomeData.find(i => i.month === label);
+        return item ? item.total : 0;
+    });
+    const expense = labels.map(label => {
+        const item = expenseData.find(e => e.month === label);
+        return item ? item.total : 0;
+    });
+
+    new Chart(document.getElementById('myChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Income', data: income, backgroundColor: 'green' },
+                { label: 'Expense', data: expense, backgroundColor: 'red' }
+            ]
+        },
+        options: { responsive: true }
+    });
+</script>
+
+</body>
+</html>
